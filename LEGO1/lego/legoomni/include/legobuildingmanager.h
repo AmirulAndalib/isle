@@ -45,7 +45,7 @@ public:
 	struct AnimEntry {
 		LegoEntity* m_entity; // 0x00
 		LegoROI* m_roi;       // 0x04
-		LegoTime m_time;      // 0x08
+		MxLong m_time;        // 0x08
 		float m_unk0x0c;      // 0x0c
 		MxBool m_muted;       // 0x10
 	};
@@ -66,9 +66,9 @@ public:
 	static void SetCustomizeAnimFile(const char* p_value);
 
 	void Init();
-	void FUN_1002fa00();
+	void LoadWorldInfo();
 	void CreateBuilding(MxS32 p_index, LegoWorld* p_world);
-	void FUN_1002fb30();
+	void Reset();
 	MxResult Write(LegoStorage* p_storage);
 	MxResult Read(LegoStorage* p_storage);
 	LegoBuildingInfo* GetInfo(LegoEntity* p_entity);
@@ -76,12 +76,12 @@ public:
 	MxBool SwitchSound(LegoEntity* p_entity);
 	MxBool SwitchMove(LegoEntity* p_entity);
 	MxBool SwitchMood(LegoEntity* p_entity);
-	MxU32 GetBuildingEntityId(LegoEntity* p_entity);
-	MxU32 FUN_1002ff40(LegoEntity* p_entity, MxBool);
+	MxU32 GetAnimationId(LegoEntity* p_entity);
+	MxU32 GetSoundId(LegoEntity* p_entity, MxBool p_state);
 	MxBool FUN_10030000(LegoEntity* p_entity);
 	MxBool FUN_10030030(MxS32 p_index);
 	MxBool FUN_10030110(LegoBuildingInfo* p_data);
-	void ScheduleAnimation(LegoEntity* p_entity, MxU32 p_length, MxBool p_haveSound, MxBool p_unk0x28);
+	void ScheduleAnimation(LegoEntity* p_entity, MxLong p_length, MxBool p_haveSound, MxBool p_unk0x28);
 	void FUN_10030590();
 	void AdjustHeight(MxS32 p_index);
 	MxResult FUN_10030630();
