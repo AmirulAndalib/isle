@@ -7,12 +7,14 @@
 class MxEndActionNotificationParam;
 
 // VTABLE: LEGO1 0x100d72a0
+// VTABLE: BETA10 0x101b91a8
 // SIZE 0x24
 class AmbulanceMissionState : public LegoState {
 public:
 	AmbulanceMissionState();
 
 	// FUNCTION: LEGO1 0x10037600
+	// FUNCTION: BETA10 0x100246c0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f00e8
@@ -27,22 +29,28 @@ public:
 
 	MxResult Serialize(LegoFile* p_file) override; // vtable+0x1c
 
+	// FUNCTION: BETA10 0x10088770
 	MxS16 GetHighScore(MxU8 p_actorId)
 	{
 		switch (p_actorId) {
 		case LegoActor::c_pepper:
 			return m_peHighScore;
+			break;
 		case LegoActor::c_mama:
 			return m_maHighScore;
+			break;
 		case LegoActor::c_papa:
 			return m_paHighScore;
+			break;
 		case LegoActor::c_nick:
 			return m_niHighScore;
+			break;
 		case LegoActor::c_laura:
 			return m_laHighScore;
-		default:
-			return 0;
+			break;
 		}
+
+		return 0;
 	}
 
 	// FUNCTION: BETA10 0x100242d0
@@ -100,6 +108,7 @@ public:
 };
 
 // VTABLE: LEGO1 0x100d71a8
+// VTABLE: BETA10 0x101b8f70
 // SIZE 0x184
 class Ambulance : public IslePathActor {
 public:
@@ -110,6 +119,7 @@ public:
 	MxResult Tickle() override;               // vtable+0x08
 
 	// FUNCTION: LEGO1 0x10035fa0
+	// FUNCTION: BETA10 0x100240b0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f03c4

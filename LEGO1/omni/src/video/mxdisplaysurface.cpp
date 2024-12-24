@@ -1,6 +1,7 @@
 #include "mxdisplaysurface.h"
 
 #include "mxbitmap.h"
+#include "mxdebug.h"
 #include "mxmisc.h"
 #include "mxomni.h"
 #include "mxpalette.h"
@@ -398,7 +399,7 @@ void MxDisplaySurface::VTable0x28(
 			MxU16* p16bitPal = m_16bitPal;
 
 			MxS32 i;
-			if (stride || length) {
+			if (!stride && !length) {
 				while (height--) {
 					MxU8* surfaceBefore = surface;
 
@@ -491,7 +492,7 @@ void MxDisplaySurface::VTable0x30(
 	MxS32 p_bottom,
 	MxS32 p_width,
 	MxS32 p_height,
-	MxBool p_und
+	MxBool p_RLE
 )
 {
 	if (!GetRectIntersection(
@@ -527,7 +528,7 @@ void MxDisplaySurface::VTable0x30(
 	switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
 	case 8: {
 		MxU8* surface = (MxU8*) ddsd.lpSurface + p_right + (p_bottom * ddsd.lPitch);
-		if (p_und) {
+		if (p_RLE) {
 			MxS32 size = p_bitmap->GetBmiHeader()->biSizeImage;
 			DrawTransparentRLE(data, surface, size, p_width, p_height, ddsd.lPitch, 8);
 		}
@@ -553,7 +554,7 @@ void MxDisplaySurface::VTable0x30(
 	}
 	case 16: {
 		MxU8* surface = (MxU8*) ddsd.lpSurface + (2 * p_right) + (p_bottom * ddsd.lPitch);
-		if (p_und) {
+		if (p_RLE) {
 			MxS32 size = p_bitmap->GetBmiHeader()->biSizeImage;
 			DrawTransparentRLE(data, surface, size, p_width, p_height, ddsd.lPitch, 16);
 		}
@@ -739,10 +740,75 @@ sixteen_bit:
 	}
 }
 
-// STUB: LEGO1 0x100bb850
-undefined4 MxDisplaySurface::VTable0x34(undefined4, undefined4, undefined4, undefined4, undefined4, undefined4)
+// FUNCTION: LEGO1 0x100bb850
+// FUNCTION: BETA10 0x10141191
+void MxDisplaySurface::VTable0x34(MxU8* p_pixels, MxS32 p_bpp, MxS32 p_width, MxS32 p_height, MxS32 p_x, MxS32 p_y)
 {
-	return 0;
+	DDSURFACEDESC surfaceDesc;
+	memset(&surfaceDesc, 0, sizeof(surfaceDesc));
+	surfaceDesc.dwSize = sizeof(surfaceDesc);
+
+	HRESULT result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL);
+
+	if (result == DDERR_SURFACELOST) {
+		m_ddSurface2->Restore();
+		result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL);
+	}
+
+	if (result == DD_OK) {
+		MxU8* pixels = p_pixels;
+
+		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
+		case 8: {
+			if (p_bpp == 16) {
+				MxTrace("16 bit source to 8 bit display NOT_IMPLEMENTED");
+				assert(0);
+				return;
+			}
+
+			MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + p_x;
+			MxLong stride = p_width;
+			MxLong length = surfaceDesc.lPitch;
+
+			while (p_height--) {
+				memcpy(dst, pixels, p_width);
+				pixels += stride;
+				dst += length;
+			}
+			break;
+		}
+		case 16: {
+			if (p_bpp == 16) {
+				MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + p_x;
+				MxLong stride = p_width * 2;
+				MxLong length = surfaceDesc.lPitch;
+
+				while (p_height--) {
+					memcpy(dst, pixels, 2 * p_width);
+					pixels += stride;
+					dst += length;
+				}
+			}
+			else if (p_bpp == 8) {
+				MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + 2 * p_x;
+				MxLong stride = p_width * 2;
+				MxLong length = -2 * p_width + surfaceDesc.lPitch;
+
+				for (MxS32 i = 0; i < p_height; i++) {
+					for (MxS32 j = 0; j < p_width; j++) {
+						*(MxU16*) dst = m_16bitPal[*pixels++];
+						dst += 2;
+					}
+
+					pixels += stride;
+					dst += length;
+				}
+			}
+		}
+		}
+
+		m_ddSurface2->Unlock(surfaceDesc.lpSurface);
+	}
 }
 
 // FUNCTION: LEGO1 0x100bba50
@@ -1063,34 +1129,234 @@ done:
 	return NULL;
 }
 
-// STUB: LEGO1 0x100bc200
+// FUNCTION: LEGO1 0x100bc200
 void MxDisplaySurface::VTable0x24(
-	LPDDSURFACEDESC,
-	MxBitmap*,
-	undefined4,
-	undefined4,
-	undefined4,
-	undefined4,
-	undefined4,
-	undefined4
+	LPDDSURFACEDESC p_desc,
+	MxBitmap* p_bitmap,
+	MxS32 p_left,
+	MxS32 p_top,
+	MxS32 p_right,
+	MxS32 p_bottom,
+	MxS32 p_width,
+	MxS32 p_height
 )
 {
+	// DECOMP: Almost an exact copy of VTable0x28, except that it uses the argument DDSURFACEDESC
+	// instead of getting one from GetDisplayMode.
+	if (!GetRectIntersection(
+			p_bitmap->GetBmiWidth(),
+			p_bitmap->GetBmiHeightAbs(),
+			m_videoParam.GetRect().GetWidth(),
+			m_videoParam.GetRect().GetHeight(),
+			&p_left,
+			&p_top,
+			&p_right,
+			&p_bottom,
+			&p_width,
+			&p_height
+		)) {
+		return;
+	}
+
+	MxU8* data = p_bitmap->GetStart(p_left, p_top);
+
+	if (m_videoParam.Flags().GetF1bit3()) {
+		p_bottom *= 2;
+		p_right *= 2;
+
+		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
+		case 8: {
+			MxU8* surface = (MxU8*) p_desc->lpSurface + p_right + (p_bottom * p_desc->lPitch);
+			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+
+			MxLong length = -2 * p_width + p_desc->lPitch;
+			while (p_height--) {
+				MxU8* surfaceBefore = surface;
+
+				for (MxS32 i = 0; p_width > i; i++) {
+					*surface++ = *data;
+					*surface++ = *data++;
+				}
+
+				data += stride;
+				surface += length;
+
+				memcpy(surface, surfaceBefore, 2 * p_width);
+				surface += p_desc->lPitch;
+			}
+			break;
+		}
+		case 16: {
+			MxU8* surface = (MxU8*) p_desc->lpSurface + (2 * p_right) + (p_bottom * p_desc->lPitch);
+			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+
+			MxS32 length = -4 * p_width + p_desc->lPitch;
+			MxS32 height = p_height;
+			MxS32 width = p_width;
+			MxS32 copyWidth = width * 4;
+			MxU16* p16bitPal = m_16bitPal;
+
+			MxS32 i;
+			if (!stride && !length) {
+				while (height--) {
+					MxU8* surfaceBefore = surface;
+
+					for (i = 0; i < width; i++) {
+						MxU16 element = p16bitPal[*data];
+						*(MxU16*) surface = element;
+						surface += 2;
+						*(MxU16*) surface = element;
+
+						data++;
+						surface += 2;
+					}
+
+					memcpy(surface, surfaceBefore, copyWidth);
+					surface += p_desc->lPitch;
+				}
+			}
+			else {
+				while (height--) {
+					MxU8* surfaceBefore = surface;
+
+					for (i = 0; i < width; i++) {
+						MxU16 element = p16bitPal[*data];
+						*(MxU16*) surface = element;
+						surface += 2;
+						*(MxU16*) surface = element;
+
+						data++;
+						surface += 2;
+					}
+
+					data += stride;
+					surface += length;
+
+					memcpy(surface, surfaceBefore, p_width * 4);
+					surface += p_desc->lPitch;
+				}
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	else {
+		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
+		case 8: {
+			MxU8* surface = (MxU8*) p_desc->lpSurface + p_right + (p_bottom * p_desc->lPitch);
+			MxLong stride = GetAdjustedStride(p_bitmap);
+
+			MxLong length = p_desc->lPitch;
+			while (p_height--) {
+				memcpy(surface, data, p_width);
+				data += stride;
+				surface += length;
+			}
+			break;
+		}
+		case 16: {
+			MxU8* surface = (MxU8*) p_desc->lpSurface + (2 * p_right) + (p_bottom * p_desc->lPitch);
+			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+
+			MxLong length = -2 * p_width + p_desc->lPitch;
+			for (MxS32 i = 0; i < p_height; i++) {
+				for (MxS32 j = 0; j < p_width; j++) {
+					*(MxU16*) surface = m_16bitPal[*data++];
+					surface += 2;
+				}
+
+				data += stride;
+				surface += length;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
 }
 
-// STUB: LEGO1 0x100bc630
-MxBool MxDisplaySurface::VTable0x2c(
-	LPDDSURFACEDESC,
-	MxBitmap*,
-	undefined4,
-	undefined4,
-	undefined4,
-	undefined4,
-	undefined4,
-	undefined4,
-	MxBool
+// FUNCTION: LEGO1 0x100bc630
+void MxDisplaySurface::VTable0x2c(
+	LPDDSURFACEDESC p_desc,
+	MxBitmap* p_bitmap,
+	MxS32 p_left,
+	MxS32 p_top,
+	MxS32 p_right,
+	MxS32 p_bottom,
+	MxS32 p_width,
+	MxS32 p_height,
+	MxBool p_RLE
 )
 {
-	return 0;
+	// DECOMP: Almost an exact copy of VTable0x28, except that it uses the argument DDSURFACEDESC
+	// instead of getting one from GetDisplayMode.
+	if (!GetRectIntersection(
+			p_bitmap->GetBmiWidth(),
+			p_bitmap->GetBmiHeightAbs(),
+			m_videoParam.GetRect().GetWidth(),
+			m_videoParam.GetRect().GetHeight(),
+			&p_left,
+			&p_top,
+			&p_right,
+			&p_bottom,
+			&p_width,
+			&p_height
+		)) {
+		return;
+	}
+
+	MxU8* src = p_bitmap->GetStart(p_left, p_top);
+
+	switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
+	case 8: {
+		MxLong destStride = p_desc->lPitch;
+		MxU8* dest = (MxU8*) p_desc->lpSurface + p_right + (p_bottom * p_desc->lPitch);
+
+		if (p_RLE) {
+			DrawTransparentRLE(src, dest, p_bitmap->GetBmiHeader()->biSizeImage, p_width, p_height, p_desc->lPitch, 8);
+		}
+		else {
+			MxLong srcSkip = GetAdjustedStride(p_bitmap) - p_width;
+			MxLong destSkip = destStride - p_width;
+
+			for (MxS32 i = 0; i < p_height; i++, src += srcSkip, dest += destSkip) {
+				for (MxS32 j = 0; j < p_width; j++, src++, dest++) {
+					if (*src) {
+						*dest = *src;
+					}
+				}
+			}
+		}
+		break;
+	}
+	case 16: {
+		MxLong destStride = p_desc->lPitch;
+		MxU8* dest = (MxU8*) p_desc->lpSurface + (2 * p_right) + (p_bottom * p_desc->lPitch);
+
+		if (p_RLE) {
+			DrawTransparentRLE(src, dest, p_bitmap->GetBmiHeader()->biSizeImage, p_width, p_height, p_desc->lPitch, 16);
+		}
+		else {
+			MxLong srcStride = GetAdjustedStride(p_bitmap);
+			MxLong srcSkip = srcStride - p_width;
+			MxLong destSkip = destStride - 2 * p_width;
+
+			for (MxS32 i = 0; i < p_height; i++, src += srcSkip, dest += destSkip) {
+				for (MxS32 j = 0; j < p_width; j++, src++, dest += 2) {
+					if (*src != 0) {
+						*(MxU16*) dest = m_16bitPal[*src];
+					}
+				}
+			}
+		}
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 // FUNCTION: LEGO1 0x100bc8b0

@@ -49,6 +49,7 @@ struct AnimInfo {
 };
 
 // VTABLE: LEGO1 0x100d8d80
+// VTABLE: BETA10 0x101bae58
 // SIZE 0x1c
 class AnimState : public LegoState {
 public:
@@ -56,6 +57,7 @@ public:
 	~AnimState() override; // vtable+0x00
 
 	// FUNCTION: LEGO1 0x10065070
+	// FUNCTION: BETA10 0x1004afe0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f0460
@@ -91,6 +93,7 @@ private:
 };
 
 // VTABLE: LEGO1 0x100d8c18
+// VTABLE: BETA10 0x101bab60
 // SIZE 0x500
 class LegoAnimationManager : public MxCore {
 public:
@@ -141,6 +144,7 @@ public:
 	MxResult Tickle() override;               // vtable+0x08
 
 	// FUNCTION: LEGO1 0x1005ec80
+	// FUNCTION: BETA10 0x100483d0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f7508
@@ -162,7 +166,7 @@ public:
 	MxBool FindVehicle(const char* p_name, MxU32& p_index);
 	MxResult ReadAnimInfo(LegoFile* p_file, AnimInfo* p_info);
 	MxResult ReadModelInfo(LegoFile* p_file, ModelInfo* p_info);
-	void FUN_10060480(LegoChar* p_characterNames[], MxU32 p_numCharacterNames);
+	void FUN_10060480(const LegoChar* p_characterNames[], MxU32 p_numCharacterNames);
 	void FUN_100604d0(MxBool p_unk0x08);
 	void FUN_100604f0(MxS32 p_objectIds[], MxU32 p_numObjectIds);
 	void FUN_10060540(MxBool p_unk0x29);

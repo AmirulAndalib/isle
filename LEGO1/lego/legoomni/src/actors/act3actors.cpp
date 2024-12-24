@@ -92,6 +92,7 @@ Act3Actor::Act3CopDest g_copDest[5] = {
 Mx3DPointFloat Act3Actor::g_unk0x10104ef0 = Mx3DPointFloat(0.0, 5.0, 0.0);
 
 // FUNCTION: LEGO1 0x1003fa50
+// FUNCTION: BETA10 0x10017fb8
 Act3Actor::Act3Actor()
 {
 	m_unk0x1c = 0;
@@ -237,7 +238,7 @@ void Act3Cop::ParseAction(char* p_extra)
 
 			for (MxS32 j = 0; j < boundary->GetNumEdges(); j++) {
 				Mx4DPointFloat* edgeNormal = boundary->GetEdgeNormal(j);
-				if (point.Dot(edgeNormal, &point) + edgeNormal->index_operator(3) < -0.001) {
+				if (point.Dot(*edgeNormal, point) + edgeNormal->index_operator(3) < -0.001) {
 					MxTrace("Bad Act3 cop destination %d\n", i);
 					break;
 				}
@@ -245,8 +246,8 @@ void Act3Cop::ParseAction(char* p_extra)
 
 			Mx4DPointFloat* boundary0x14 = boundary->GetUnknown0x14();
 
-			if (point.Dot(&point, boundary0x14) + boundary0x14->index_operator(3) <= 0.001 &&
-				point.Dot(&point, boundary0x14) + boundary0x14->index_operator(3) >= -0.001) {
+			if (point.Dot(point, *boundary0x14) + boundary0x14->index_operator(3) <= 0.001 &&
+				point.Dot(point, *boundary0x14) + boundary0x14->index_operator(3) >= -0.001) {
 				continue;
 			}
 
@@ -495,9 +496,9 @@ MxResult Act3Cop::FUN_10040360()
 		v3 = v4;
 		v3 -= vecUnk;
 		v3.Unitize();
-		v1.EqualsCross(&v2, &v3);
+		v1.EqualsCross(v2, v3);
 		v1.Unitize();
-		v2.EqualsCross(&v3, &v1);
+		v2.EqualsCross(v3, v1);
 
 		VTable0x9c();
 	}
@@ -627,9 +628,9 @@ void Act3Brickster::Animate(float p_time)
 			localc = local20;
 			localc -= m_pInfo->m_position;
 			localc.Unitize();
-			local14.EqualsCross(&local28, &localc);
+			local14.EqualsCross(local28, localc);
 			local14.Unitize();
-			local28.EqualsCross(&localc, &local14);
+			local28.EqualsCross(localc, local14);
 
 			assert(!m_cameraFlag);
 
@@ -674,9 +675,9 @@ void Act3Brickster::Animate(float p_time)
 
 			local80 -= m_unk0x3c;
 			local80.Unitize();
-			local88.EqualsCross(&local9c, &local80);
+			local88.EqualsCross(local9c, local80);
 			local88.Unitize();
-			local9c.EqualsCross(&local80, &local88);
+			local9c.EqualsCross(local80, local88);
 
 			assert(!m_cameraFlag);
 
@@ -990,9 +991,9 @@ MxResult Act3Brickster::FUN_100417c0()
 		v3 = v4;
 		v3 -= vecUnk;
 		v3.Unitize();
-		v1.EqualsCross(&v2, &v3);
+		v1.EqualsCross(v2, v3);
 		v1.Unitize();
-		v2.EqualsCross(&v3, &v1);
+		v2.EqualsCross(v3, v1);
 
 		VTable0x9c();
 
@@ -1086,7 +1087,7 @@ MxS32 Act3Brickster::FUN_10042300()
 						local18 = local64[local1c];
 						local18 -= local38;
 
-						if (maxE == NULL || (local18.Dot(&local94, &local18) < 0.0f && local78 < local98)) {
+						if (maxE == NULL || (local18.Dot(local94, local18) < 0.0f && local78 < local98)) {
 							maxE = e;
 							m_boundary = boundaries[i];
 							local78 = local98;

@@ -8,12 +8,14 @@
 class MxEndActionNotificationParam;
 
 // VTABLE: LEGO1 0x100d7fd8
+// VTABLE: BETA10 0x101bfee0
 // SIZE 0x28
 class TowTrackMissionState : public LegoState {
 public:
 	TowTrackMissionState();
 
 	// FUNCTION: LEGO1 0x1004dfa0
+	// FUNCTION: BETA10 0x100f8920
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f00bc
@@ -28,22 +30,28 @@ public:
 
 	MxResult Serialize(LegoFile* p_file) override; // vtable+0x1c
 
+	// FUNCTION: BETA10 0x10088890
 	MxS16 GetHighScore(MxU8 p_actorId)
 	{
 		switch (p_actorId) {
 		case LegoActor::c_pepper:
 			return m_peHighScore;
+			break;
 		case LegoActor::c_mama:
 			return m_maHighScore;
+			break;
 		case LegoActor::c_papa:
 			return m_paHighScore;
+			break;
 		case LegoActor::c_nick:
 			return m_niHighScore;
+			break;
 		case LegoActor::c_laura:
 			return m_laHighScore;
-		default:
-			return 0;
+			break;
 		}
+
+		return 0;
 	}
 
 	// FUNCTION: BETA10 0x100f8530
@@ -102,6 +110,7 @@ public:
 };
 
 // VTABLE: LEGO1 0x100d7ee0
+// VTABLE: BETA10 0x101bfdc0
 // SIZE 0x180
 class TowTrack : public IslePathActor {
 public:
@@ -109,6 +118,7 @@ public:
 	~TowTrack() override;
 
 	// FUNCTION: LEGO1 0x1004c7c0
+	// FUNCTION: BETA10 0x100f8440
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f03b8

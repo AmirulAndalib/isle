@@ -52,6 +52,7 @@ MxS32 LegoPlantManager::g_maxMove[4] = {3, 3, 3, 3};
 MxU32 g_plantAnimationId[4] = {30, 33, 36, 39};
 
 // GLOBAL: LEGO1 0x100f3188
+// GLOBAL: BETA10 0x101f4e70
 char* LegoPlantManager::g_customizeAnimFile = NULL;
 
 // GLOBAL: LEGO1 0x10103180
@@ -65,6 +66,7 @@ LegoPlantManager::LegoPlantManager()
 }
 
 // FUNCTION: LEGO1 0x100262c0
+// FUNCTION: BETA10 0x100c5002
 LegoPlantManager::~LegoPlantManager()
 {
 	delete[] g_customizeAnimFile;
@@ -74,6 +76,8 @@ LegoPlantManager::~LegoPlantManager()
 // FUNCTION: BETA10 0x100c4f90
 void LegoPlantManager::Init()
 {
+	// In BETA10 this appears to be LegoPlantManager::LegoPlantManager()
+
 	for (MxS32 i = 0; i < sizeOfArray(g_plantInfo); i++) {
 		g_plantInfo[i] = g_plantInfoInit[i];
 	}
@@ -141,7 +145,7 @@ MxResult LegoPlantManager::FUN_10026410()
 				for (MxS32 j = 0; j < boundary->GetNumEdges(); j++) {
 					Mx4DPointFloat* normal = boundary->GetEdgeNormal(j);
 
-					if (position.Dot(normal, &position) + (*normal).index_operator(3) < -0.001) {
+					if (position.Dot(*normal, position) + (*normal).index_operator(3) < -0.001) {
 						MxTrace(
 							"Plant %d shot location (%g, %g, %g) is not in boundary %s.\n",
 							i,
@@ -158,8 +162,8 @@ MxResult LegoPlantManager::FUN_10026410()
 				if (g_plantInfo[i].m_boundary != NULL) {
 					Mx4DPointFloat& unk0x14 = *g_plantInfo[i].m_boundary->GetUnknown0x14();
 
-					if (position.Dot(&position, &unk0x14) + unk0x14.index_operator(3) > 0.001 ||
-						position.Dot(&position, &unk0x14) + unk0x14.index_operator(3) < -0.001) {
+					if (position.Dot(position, unk0x14) + unk0x14.index_operator(3) > 0.001 ||
+						position.Dot(position, unk0x14) + unk0x14.index_operator(3) < -0.001) {
 
 						g_plantInfo[i].m_y =
 							-((position[0] * unk0x14.index_operator(0) + unk0x14.index_operator(3) +
